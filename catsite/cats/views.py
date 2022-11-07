@@ -22,7 +22,7 @@ class CatHome(DataMixin, ListView):
         return context
 
     def get_queryset(self):
-        return Cat.objects.filter(is_published=True)
+        return Cat.objects.filter(is_published=True).select_related('category')
 
 
 def about(request):
@@ -68,13 +68,14 @@ class CatCategory(DataMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title='Категория - ' + str(context['posts'][0].category),
-                                      category_selected=context['posts'][0].category_id)
+        c = Category.objects.get(slug=self.kwargs['category_slug'])
+        c_def = self.get_user_context(title='Категория - ' + str(c.name),
+                                      category_selected=c.pk)
         context.update(c_def)
         return context
 
     def get_queryset(self):
-        return Cat.objects.filter(category__slug=self.kwargs['category_slug'], is_published=True)
+        return Cat.objects.filter(category__slug=self.kwargs['category_slug'], is_published=True).select_related('category')
 
 
 class RegisterUser(DataMixin, CreateView):
