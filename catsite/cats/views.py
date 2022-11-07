@@ -4,7 +4,7 @@ from django.contrib.auth.views import LoginView
 from django.http import HttpResponse, HttpResponseNotFound, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView
+from django.views.generic import ListView, DetailView, CreateView, FormView
 from .models import *
 from .forms import *
 from .utils import *
@@ -43,8 +43,20 @@ class AddPage(LoginRequiredMixin, DataMixin, CreateView):
         return context
 
 
-def contact(request):
-    return HttpResponse("Обратная связь")
+class ContactFormView(DataMixin, FormView):
+    form_class = ContactForm
+    template_name = 'cats/contact.html'
+    success_url = reverse_lazy('home')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title='Обратная связь')
+        context.update(c_def)
+        return context
+
+    def form_valid(self, form):
+        print(form.cleaned_data)
+        return redirect('home')
 
 
 class ShowPost(DataMixin, DetailView):
@@ -75,7 +87,8 @@ class CatCategory(DataMixin, ListView):
         return context
 
     def get_queryset(self):
-        return Cat.objects.filter(category__slug=self.kwargs['category_slug'], is_published=True).select_related('category')
+        return Cat.objects.filter(category__slug=self.kwargs['category_slug'], is_published=True).select_related(
+            'category')
 
 
 class RegisterUser(DataMixin, CreateView):
@@ -93,6 +106,7 @@ class RegisterUser(DataMixin, CreateView):
         user = form.save()
         login(self.request, user)
         return redirect('home')
+
 
 class LoginUser(DataMixin, LoginView):
     form_class = LoginUserForm
